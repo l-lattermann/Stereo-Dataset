@@ -1,0 +1,9 @@
+camera.A=[1104.37000 0 640.00000; 0 1104.37000 480.00000; 0 0 1]
+camera.height=960
+camera.test=0.000000
+camera.selfcalib_offset=0.000000
+camera.focal_length_scale_counter=0
+camera.focal_length_scale_value=1.000000
+t=0.16005
+disp.scale=0.06250
+disp.offset=0
