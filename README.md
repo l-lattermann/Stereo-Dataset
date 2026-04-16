@@ -15,7 +15,7 @@ All samples are preprocessed into a unified, model-friendly format.
 ## Directory Structure
 
 ```
-output/
+dataset/
 ├── <sample_name>/
 │   ├── <sample_name>_left_img.png
 │   ├── <sample_name>_right_img.png
