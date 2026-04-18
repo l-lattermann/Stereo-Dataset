@@ -1,0 +1,39 @@
+# ============================================================
+# Camera & Stereo Parameters
+# ============================================================
+
+# camera.A:
+# Intrinsic camera matrix K in the form:
+# [fx 0 cx;
+#  0 fy cy;
+#  0  0  1]
+# fx, fy: focal lengths in pixels
+# cx, cy: principal point (usually image center)
+
+# camera.height / camera.width:
+# Image resolution in pixels
+# height = number of rows (y-axis)
+# width  = number of columns (x-axis)
+
+# t:
+# Stereo baseline in meters (distance between left and right camera)
+
+# disp.scale:
+# Scaling factor for disparity values
+# real_disparity = stored_disparity * disp.scale
+
+# rho:
+# Precomputed constant for depth calculation
+# rho = fx * baseline
+# depth (Z) = rho / disparity
+
+# ============================================================
+# Parameters
+# ============================================================
+
+camera.A=[1104.37000 0 640.00000; 0 1104.37000 480.00000; 0 0 1]
+camera.height=960
+camera.width=1280
+t=0.16005
+disp.scale=0.06250
+rho=176.75491

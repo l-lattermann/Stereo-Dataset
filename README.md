@@ -1,10 +1,13 @@
 # Dataset Description
 
-This dataset contains stereo image pairs captured with an RC Cube–based setup, along with derived disparity maps, filtered 3D point clouds, and camera parameters. Each sample represents a single scene with one or more objects under varying spatial configurations (e.g., occlusions, stacking, or contact situations).
+This dataset contains stereo image pairs captured with an RC Cube–based setup, along with derived disparity maps, **organized 3D point clouds**, and **triangle meshes** reconstructed from stereo depth.
+
+Each sample represents a single scene with one or more objects under varying spatial configurations (e.g., occlusions, stacking, or contact situations).
 
 The dataset is designed for:
 - stereo depth estimation evaluation  
 - point cloud reconstruction  
+- surface reconstruction (mesh generation)  
 - robotic perception and grasping research  
 - downstream tasks such as segmentation or grasp selection  
 
@@ -20,9 +23,10 @@ dataset/
 │   ├── <sample_name>_left_img.png
 │   ├── <sample_name>_right_img.png
 │   ├── <sample_name>_disparity_img.png
-│   ├── <sample_name>_params.txt
 │   ├── <sample_name>_pointcloud.ply
 │   ├── <sample_name>.npz
+├── camera_parameters.txt
+├── README.md
 ```
 
 ---
@@ -37,7 +41,7 @@ dataset/
 ```
 
 - RGB stereo image pair  
-- Resolution: depends on capture setup  
+- Resolution: typically ~1280×960  
 - Format: 8-bit PNG  
 
 ---
@@ -70,18 +74,26 @@ Contains relevant stereo calibration parameters (subset of RC Cube output):
 
 ---
 
-### 4. Point Cloud
+### 4. Point Cloud + Mesh
 
 ```
 <sample_name>_pointcloud.ply
 ```
 
-- Binary little-endian PLY format  
-- Contains filtered 3D points reconstructed from disparity  
+Binary little-endian PLY format.
 
-Structure:
+#### Vertex attributes:
 - `x, y, z` (float32, meters)
-- `red, green, blue` (uint8)
+- `scan_size` (float32)
+- `diffuse_red, diffuse_green, diffuse_blue` (uint8)
+
+#### Mesh:
+- Triangle faces connecting neighboring pixels  
+- Built from organized stereo grid  
+- Invalid or discontinuous regions are filtered using:
+  - depth threshold
+  - edge length constraint
+  - depth discontinuity constraint
 
 ---
 
@@ -96,17 +108,21 @@ This is the main file for downstream processing.
 #### Contents:
 
 ```python
-rgb            # (H, W, 3) uint8
-disp           # (H, W) float32
-valid_mask     # (H, W) uint8 (0/1)
+rgb        # (H, W, 3) uint8 — left RGB image
 
-points_xyz     # (N, 3) float32
-points_rgb     # (N, 3) uint8
+xyz        # (H, W, 3) float32 — per-pixel 3D coordinates in meters (camera frame)
+           # [X, Y, Z] where Z = depth
 
-fx, fy         # float32
-cx, cy         # float32
-baseline       # float32
-rho            # float32 (fx * baseline)
+label      # (H, W) int32 — validity / segmentation mask (1 = valid point, 0 = invalid)
+
+fx, fy     # float32 (scalar) — focal lengths
+cx, cy     # float32 (scalar) — principal point
+
+width      # int32 (scalar) — image width
+height     # int32 (scalar) — image height
+
+baseline   # float32 (scalar) — stereo baseline (meters)
+rho        # float32 (scalar) — disparity-to-depth factor (fx * baseline)
 ```
 
 ---
@@ -131,37 +147,26 @@ Units:
 
 ---
 
-## Filtering
+## Mesh Construction
 
-Points included satisfy:
+The mesh is generated from the organized stereo grid:
 
-- disparity:
-```
-MIN_DISP < disp < MAX_DISP_VALID
-```
+- Each pixel cell → 2 triangles
+- Triangles are **discarded if**:
+  - depth difference too large 
+  - edge length too large 
 
-- depth:
-```
-MIN_DEPTH < z < MAX_DEPTH
-```
-
----
-
-## Naming Convention
-
-All samples are translated and normalized into English.
-
-Examples:
-- `blaue box offen` → `open_blue_box`
-- `kabel schwarz aufgerollt` → `coiled_black_cable`
-- `flasche steht auf ladekabel` → `bottle_on_charging_cable`
+This prevents:
+- connections between foreground/background
+- artifacts across occlusions
 
 ---
+
 
 ## Notes
 
 - `.npz` is the recommended format for ML pipelines  
-- `.ply` is for visualization (Open3D, MeshLab)  
+- `.ply` contains both **geometry and mesh** for visualization  
 - disparity `.png` is only for inspection  
 
 ---
@@ -170,5 +175,6 @@ Examples:
 
 - stereo matching benchmarking  
 - point cloud–based perception  
+- mesh reconstruction from stereo  
 - grasp generation (e.g., Contact-GraspNet)  
 - multimodal reasoning (image + geometry)
